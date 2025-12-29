@@ -22,6 +22,7 @@ type Config struct {
 	EmbeddingProvider string     `yaml:"embedding_provider"` // "openai" or "ollama"
 	OllamaURL         string     `yaml:"ollama_url"`          // Ollama API endpoint
 	OllamaModel       string     `yaml:"ollama_model"`        // Ollama embedding model
+	LLMModel          string     `yaml:"llm_model"`           // LLM model to use (e.g. "claude-sonnet-4-5-20250929", "claude-haiku-4-5-20251001")
 	CostLimits        CostLimits `yaml:"cost_limits"`
 }
 

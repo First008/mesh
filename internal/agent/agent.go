@@ -35,7 +35,7 @@ func New(config *Config, logger zerolog.Logger) (*Agent, error) {
 	// Create LLM provider (Anthropic for Phase 1)
 	llmProvider, err := llm.NewAnthropicProvider(
 		config.AnthropicKey,
-		"", // Use default model
+		config.LLMModel, // Use configured model (e.g. haiku, sonnet)
 		logger,
 	)
 	if err != nil {

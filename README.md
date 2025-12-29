@@ -1,4 +1,4 @@
-# MESH
+# MESH 🕸️
 
 Multi-repository AI Code Assistant with Semantic Search. Ask questions about your codebase, get accurate answers based on actual code with file:line references.
 
@@ -42,6 +42,8 @@ MESH is a semantic search gateway for codebases. It indexes code into vector emb
 ```bash
 # Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
+or 
+brew install ollama
 
 # Start service
 ollama serve
@@ -56,15 +58,29 @@ ollama pull bge-m3
 git clone https://github.com/First008/mesh.git
 cd mesh
 
-# Create .env
+# Create .env in mesh root directory
 cat > .env << EOF
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 LOG_LEVEL=info
+# Optional: Set if mesh is not in same directory as other repos
+# PLATFORM_DIR=/path/to/parent/directory
 EOF
-
-# Edit configs/repos.yaml
-# Update repository paths (line 47-111)
 ```
+
+**Directory Structure:**
+```
+/your/projects/
+  ├── mesh/              (this repository)
+  ├── repo1/             (your codebases)
+  ├── repo2/
+  └── repo3/
+```
+
+If your repos are siblings to mesh (as above), you don't need `PLATFORM_DIR` - the default works.
+If mesh is elsewhere, set `PLATFORM_DIR=/your/projects` in `.env`.
+
+**Create `configs/repos.yaml`:**
+Prepare repositories with proper name, path (relative to `/repos` mount), focus paths, exclude patterns and personality for best results.
 
 ### 3. Start
 
@@ -180,20 +196,27 @@ repos:
 
 ### Docker Compose
 
-Two compose files available:
-- `docker-compose.gateway.yml` - Multi-repo gateway (recommended, also works for single repo)
-- `docker-compose.yml` - Legacy single-repo mode
+Uses `deployments/docker/docker-compose.yml` for the gateway (single file for multi-repo setup).
 
-Edit `deployments/docker/docker-compose.gateway.yml` and update volume mounts:
+**Volume Mount Configuration:**
+The compose file automatically mounts your repositories using `PLATFORM_DIR` from `.env`:
 
 ```yaml
-services:
-  mesh-gateway:
-    volumes:
-      - /path/to/your/repos:/repos:ro
-      - ./configs/repos.yaml:/config.yaml:ro
-      - ./.env:/app/.env:ro
-      - mesh-metadata:/app/.mesh
+volumes:
+  - ${PLATFORM_DIR:-../../..}:/repos:ro  # Auto-discovers sibling repos
+```
+
+**No configuration needed** if your directory structure is:
+```
+/your/projects/
+  ├── mesh/
+  ├── repo1/
+  └── repo2/
+```
+
+**Custom location?** Set in `.env`:
+```bash
+PLATFORM_DIR=/path/to/your/projects
 ```
 
 ### Embedding Models

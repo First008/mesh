@@ -1,4 +1,4 @@
-.PHONY: build build-all build-mcp-bridge build-indexer run run-gateway run-mcp test test-verbose test-coverage \
+.PHONY: build build-all build-mcp-bridge build-indexer run test test-verbose test-coverage \
         clean lint fmt docker-build docker-up docker-down docker-logs index verify deps help
 
 # Variables
@@ -24,17 +24,9 @@ build-indexer: ## Build the indexer binary
 build-all: build build-mcp-bridge build-indexer ## Build all binaries
 
 # Run targets
-run: build ## Run the agent locally (HTTP mode)
-	@echo "Running $(BINARY_NAME) in HTTP mode..."
-	@./$(BINARY_NAME) -config configs/agent.yaml
-
-run-gateway: build ## Run the gateway locally (Gateway mode)
+run: build ## Run the gateway locally
 	@echo "Running $(BINARY_NAME) in Gateway mode..."
 	@MODE=gateway ./$(BINARY_NAME) -config configs/repos.yaml
-
-run-mcp: build ## Run in MCP mode
-	@echo "Running $(BINARY_NAME) in MCP mode..."
-	@MODE=mcp ./$(BINARY_NAME) -config configs/agent.yaml
 
 # Test targets
 test: ## Run all tests
@@ -177,7 +169,7 @@ help: ## Show this help message
 	@echo ""
 	@echo "Examples:"
 	@echo "  make build              # Build main binary"
-	@echo "  make run-gateway        # Run in gateway mode"
+	@echo "  make run                # Run gateway locally"
 	@echo "  make test-coverage      # Run tests with coverage"
 	@echo "  make docker-up          # Start with Docker Compose"
 	@echo "  make health             # Check service health"

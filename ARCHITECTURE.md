@@ -74,27 +74,14 @@ MESH is an intelligent code understanding gateway that enables semantic search a
               └─────────────────────────────────┘
 ```
 
-### Execution Modes
+### Architecture
 
-MESH supports three execution modes via a single binary (`cmd/agent/main.go`):
-
-#### 1. Gateway Mode (Recommended)
-- Manages multiple repositories
+**Gateway Mode** (Multi-Repository):
+- Manages multiple repositories with branch-aware indexing
 - Configuration: `configs/repos.yaml`
 - Single HTTP server routing to multiple agents
 - Periodic branch scanning for automatic re-indexing
-
-#### 2. HTTP Mode
-- Single repository HTTP server
-- Configuration: `configs/agent.yaml`
-- Backward compatible with legacy deployments
-- Direct HTTP API access
-
-#### 3. MCP Mode
-- Model Context Protocol stdio server
-- Single repository
-- Integrates with Claude Code
-- Configuration: `configs/agent.yaml`
+- REST API and MCP protocol support
 
 ---
 

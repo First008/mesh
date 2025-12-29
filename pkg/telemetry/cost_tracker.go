@@ -33,6 +33,10 @@ var AnthropicPricing = map[string]PricingTable{
 	// Haiku 3.5
 	"claude-haiku-3.5":          {InputPricePerMToken: 0.80, OutputPricePerMToken: 4.00},
 	"claude-3-5-haiku-20241022": {InputPricePerMToken: 0.80, OutputPricePerMToken: 4.00},
+
+	// Haiku 4.5 (higher pricing than 3.5: $1/MTok input, $5/MTok output)
+	"claude-haiku-4.5":          {InputPricePerMToken: 1.00, OutputPricePerMToken: 5.00},
+	"claude-haiku-4-5-20251001": {InputPricePerMToken: 1.00, OutputPricePerMToken: 5.00},
 }
 
 // CostTracker tracks API costs and enforces limits
