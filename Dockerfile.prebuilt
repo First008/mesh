@@ -1,0 +1,17 @@
+FROM alpine:latest
+
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates git
+
+WORKDIR /app
+
+# Copy pre-built binary
+COPY mesh-agent-linux /app/mesh-agent
+RUN chmod +x /app/mesh-agent
+
+# Create repo directory
+RUN mkdir -p /repo
+
+# Run the agent
+ENTRYPOINT ["/app/mesh-agent"]
+CMD ["-config", "/config.yaml"]

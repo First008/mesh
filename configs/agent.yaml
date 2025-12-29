@@ -1,0 +1,52 @@
+# Single-Agent Configuration for HTTP or MCP Mode
+# Use this when running a single repository agent (not gateway mode)
+# For multi-repo gateway, use repos.yaml instead
+
+# Repository to index and analyze
+repo_path: /repo
+repo_name: my-repo
+
+# Focus on specific paths (optional)
+# These directories will be prioritized in search results
+focus_paths:
+  - internal/**
+  - pkg/**
+  - cmd/**
+
+# Custom agent personality (optional)
+# Defines the agent's expertise and how it responds
+personality: |
+  You are an expert software engineer specializing in this codebase.
+  You understand the architecture, patterns, and best practices used in this project.
+
+# HTTP server port (for HTTP mode)
+port: 8080
+
+# API keys: Set empty to load from environment variables
+# ANTHROPIC_API_KEY and OPENAI_API_KEY will be used automatically
+anthropic_key: ""
+openai_key: ""
+
+# Vector store configuration
+# Qdrant gRPC endpoint (not HTTP!) - use port 6334 for gRPC
+qdrant_url: qdrant:6334
+
+# Embedding provider: "ollama" (local, private) or "openai" (cloud, better quality)
+embedding_provider: ollama
+
+# Ollama configuration (for local embeddings)
+ollama_url: http://host.docker.internal:11434  # Access host's Ollama from container
+ollama_model: bge-m3  # Recommended: 8K context, 1024 dimensions
+
+# Alternative: Use nomic-embed-text for faster indexing (2K context, 768 dimensions)
+# ollama_model: nomic-embed-text
+
+# OpenAI configuration (alternative, requires API key)
+# embedding_provider: openai
+# openai_key: ""  # Or set OPENAI_API_KEY
+
+# Cost limits (for Anthropic API usage)
+cost_limits:
+  daily_max_usd: 10.0           # Maximum spend per day
+  per_query_max_tokens: 100000  # Maximum tokens per query
+  alert_threshold_usd: 8.0      # Alert when 80% of daily limit reached

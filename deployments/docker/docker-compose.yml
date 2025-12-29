@@ -1,0 +1,39 @@
+services:
+  # MESH Agent for a single repository
+  agent:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile.agent
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount the repository as read-only
+      - ${REPO_PATH:-/path/to/your/repo}:/repo:ro
+      # Mount config file
+      - ../../configs/agent.yaml:/config.yaml:ro
+    environment:
+      - ANTHROPIC_API_KEY
+      - OPENAI_API_KEY
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      - qdrant
+    networks:
+      - mesh-network
+
+  # Qdrant vector database (for Phase 2)
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333" # HTTP API
+      - "6334:6334" # gRPC API
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - mesh-network
+
+networks:
+  mesh-network:
+    driver: bridge
+
+volumes:
+  qdrant-data:
