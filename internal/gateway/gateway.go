@@ -105,6 +105,7 @@ func (gw *Gateway) buildAgentConfig(repoConfig RepoConfig) *agent.Config {
 		EmbeddingProvider: gw.config.EmbeddingProvider,
 		OllamaURL:         gw.config.OllamaURL,
 		OllamaModel:       gw.config.EmbeddingModel,
+		LLMProvider:       gw.config.LLMProvider,
 		LLMModel:          gw.config.LLMModel,
 		CostLimits: agent.CostLimits{
 			DailyMaxUSD:       100.0,

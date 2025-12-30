@@ -20,17 +20,18 @@ type Config struct {
 	OpenAIKey         string     `yaml:"openai_key"`
 	QdrantURL         string     `yaml:"qdrant_url"`
 	EmbeddingProvider string     `yaml:"embedding_provider"` // "openai" or "ollama"
-	OllamaURL         string     `yaml:"ollama_url"`          // Ollama API endpoint
-	OllamaModel       string     `yaml:"ollama_model"`        // Ollama embedding model
-	LLMModel          string     `yaml:"llm_model"`           // LLM model to use (e.g. "claude-sonnet-4-5-20250929", "claude-haiku-4-5-20251001")
+	OllamaURL         string     `yaml:"ollama_url"`         // Ollama API endpoint
+	OllamaModel       string     `yaml:"ollama_model"`       // Ollama embedding model
+	LLMProvider       string     `yaml:"llm_provider"`       // "anthropic", "ollama", "openai"
+	LLMModel          string     `yaml:"llm_model"`          // LLM model to use (e.g. "claude-sonnet-4-5-20250929", "claude-haiku-4-5-20251001")
 	CostLimits        CostLimits `yaml:"cost_limits"`
 }
 
 // CostLimits defines cost constraints for the agent
 type CostLimits struct {
-	DailyMaxUSD          float64 `yaml:"daily_max_usd"`
-	PerQueryMaxTokens    int     `yaml:"per_query_max_tokens"`
-	AlertThresholdUSD    float64 `yaml:"alert_threshold_usd"`
+	DailyMaxUSD       float64 `yaml:"daily_max_usd"`
+	PerQueryMaxTokens int     `yaml:"per_query_max_tokens"`
+	AlertThresholdUSD float64 `yaml:"alert_threshold_usd"`
 }
 
 // LoadConfig loads agent configuration from a YAML file

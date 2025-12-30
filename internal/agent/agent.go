@@ -32,10 +32,15 @@ func New(config *Config, logger zerolog.Logger) (*Agent, error) {
 	// Create personality
 	personality := NewPersonality(config.RepoName, config.Personality, config.FocusPaths)
 
-	// Create LLM provider (Anthropic for Phase 1)
-	llmProvider, err := llm.NewAnthropicProvider(
-		config.AnthropicKey,
-		config.LLMModel, // Use configured model (e.g. haiku, sonnet)
+	// Create LLM provider using factory
+	llmProvider, err := factory.NewLLMProvider(
+		factory.LLMConfig{
+			Provider:     config.LLMProvider,
+			Model:        config.LLMModel,
+			AnthropicKey: config.AnthropicKey,
+			OpenAIKey:    config.OpenAIKey,
+			OllamaURL:    config.OllamaURL,
+		},
 		logger,
 	)
 	if err != nil {
