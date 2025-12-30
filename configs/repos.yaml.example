@@ -54,6 +54,43 @@ repos:
       - internal/repository/**
       - pkg/handlers/**
       - cmd/server/**
+    exclude_patterns:
+      # Documentation and config files
+      - "**/*.md"
+      - "**/*.txt"
+      - "**/.env*"
+      - "**/Dockerfile*"
+      - "**/.dockerignore"
+      - "**/docker-compose*.yml"
+
+      # Go build artifacts
+      - "**/vendor/**"
+      - "**/*.exe"
+      - "**/*.dll"
+      - "**/*.so"
+      - "**/*.dylib"
+
+      # Test and coverage files
+      - "**/*_test.go"
+      - "**/testdata/**"
+      - "**/*.test"
+      - "**/coverage.out"
+
+      # Config and data files
+      - "**/*.json"
+      - "**/*.yaml"
+      - "**/*.yml"
+      - "**/*.toml"
+
+      # IDE and editor files
+      - "**/.vscode/**"
+      - "**/.idea/**"
+      - "**/*.swp"
+      - "**/*.swo"
+
+      # VCS and logs
+      - "**/.git/**"
+      - "**/*.log"
     personality: |
       You are an expert in Go-based microservices, RESTful API design, and distributed systems.
 
@@ -87,6 +124,49 @@ repos:
       - src/hooks/**
       - src/services/**
       - src/store/**
+    exclude_patterns:
+      # Build artifacts and dependencies
+      - "**/node_modules/**"
+      - "**/dist/**"
+      - "**/build/**"
+      - "**/.next/**"
+      - "**/.nuxt/**"
+      - "**/out/**"
+
+      # Documentation
+      - "**/*.md"
+      - "**/docs/**"
+
+      # Config files
+      - "**/*.json"
+      - "**/*.yaml"
+      - "**/*.yml"
+      - "**/.env*"
+
+      # Test files
+      - "**/*.test.ts"
+      - "**/*.test.tsx"
+      - "**/*.test.js"
+      - "**/*.test.jsx"
+      - "**/*.spec.ts"
+      - "**/*.spec.tsx"
+      - "**/__tests__/**"
+      - "**/coverage/**"
+
+      # Styles (if not critical to understand)
+      - "**/*.css"
+      - "**/*.scss"
+      - "**/*.sass"
+      - "**/*.less"
+
+      # IDE files
+      - "**/.vscode/**"
+      - "**/.idea/**"
+
+      # Misc
+      - "**/.git/**"
+      - "**/*.log"
+      - "**/public/**"
     personality: |
       You are an expert in modern React development, TypeScript, and frontend architecture.
 

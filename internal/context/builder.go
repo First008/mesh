@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -515,22 +516,119 @@ func extractBasePath(filePath string) string {
 }
 
 // shouldExclude checks if a file should be excluded based on exclude patterns
+// Supports gitignore-like glob patterns including ** for recursive matching
 func (b *Builder) shouldExclude(filePath string) bool {
 	if len(b.excludePatterns) == 0 {
 		return false
 	}
 
+	// Normalize to forward slashes for consistent matching
+	normalizedPath := filepath.ToSlash(filePath)
+
 	for _, pattern := range b.excludePatterns {
-		// Support glob patterns using filepath.Match
-		if matched, _ := filepath.Match(pattern, filepath.Base(filePath)); matched {
-			return true
-		}
-		// Also support substring matching for paths
-		if strings.Contains(filePath, pattern) {
+		normalizedPattern := filepath.ToSlash(pattern)
+
+		if matchGlobPattern(normalizedPath, normalizedPattern) {
 			return true
 		}
 	}
 	return false
+}
+
+// matchGlobPattern matches path against a gitignore-style glob pattern
+// Supports: *, ?, [abc], and ** (recursive directory match)
+func matchGlobPattern(filePath, pattern string) bool {
+	// Special case: "**" alone matches everything
+	if pattern == "**" {
+		return true
+	}
+
+	// If pattern contains **, handle it specially
+	if strings.Contains(pattern, "**") {
+		return matchDoubleStarPattern(filePath, pattern)
+	}
+
+	// Simple glob without **: try matching basename and full path
+	if matched, err := path.Match(pattern, path.Base(filePath)); err == nil && matched {
+		return true
+	}
+
+	// Also try matching full path for patterns like "vendor/*"
+	matched, err := path.Match(pattern, filePath)
+	return err == nil && matched
+}
+
+// matchDoubleStarPattern handles patterns with ** (recursive directory wildcard)
+// Examples:
+//
+//	"**/*.md" matches any .md file at any depth
+//	"**/vendor/**" matches anything inside any vendor directory
+//	"docs/**" matches everything under docs/
+func matchDoubleStarPattern(filePath, pattern string) bool {
+	// Handle special case: pattern like "**/vendor/**" (directory anywhere)
+	// This means: match if "vendor" appears as a path segment
+	if strings.Count(pattern, "**") >= 2 {
+		// Extract the middle part between ** markers
+		// Pattern: "**/vendor/**" -> we want to check if "vendor" is in path
+		parts := strings.Split(pattern, "**")
+		for _, part := range parts {
+			part = strings.Trim(part, "/")
+			if part != "" {
+				// Check if this segment appears in the file path
+				pathSegments := strings.Split(filePath, "/")
+				for _, segment := range pathSegments {
+					if segment == part {
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}
+
+	// Handle single ** pattern
+	parts := strings.SplitN(pattern, "**", 2)
+	prefix := strings.Trim(parts[0], "/")
+	suffix := ""
+	if len(parts) > 1 {
+		suffix = strings.Trim(parts[1], "/")
+	}
+
+	// Check prefix: if present, path must start with it (at segment boundary)
+	if prefix != "" {
+		if !strings.HasPrefix(filePath, prefix+"/") && filePath != prefix {
+			// Prefix doesn't match
+			return false
+		}
+		// Remove matched prefix for suffix check
+		filePath = strings.TrimPrefix(filePath, prefix)
+		filePath = strings.TrimPrefix(filePath, "/")
+	}
+
+	// Check suffix: if present, must match at end (or any segment for patterns like /*.md)
+	if suffix != "" {
+		// For suffix patterns like "/*.md" or ".md", check against basename
+		suffix = strings.TrimPrefix(suffix, "/")
+
+		// Try matching the suffix as a simple glob
+		if matched, err := path.Match(suffix, path.Base(filePath)); err == nil && matched {
+			return true
+		}
+
+		// Also try matching remaining path segments
+		// For "**/*.go", we want to match "foo/bar/test.go"
+		pathParts := strings.Split(filePath, "/")
+		for _, part := range pathParts {
+			if matched, err := path.Match(suffix, part); err == nil && matched {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	// No suffix means "**" matches rest of path
+	return true
 }
 
 // keywordSearch performs simple keyword-based search
