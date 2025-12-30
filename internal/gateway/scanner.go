@@ -22,7 +22,7 @@ type BranchScanner struct {
 // NewBranchScanner creates a new periodic branch scanner
 func NewBranchScanner(gateway *Gateway, scanInterval time.Duration, logger zerolog.Logger) *BranchScanner {
 	if scanInterval == 0 {
-		scanInterval = 5 * time.Minute // Default: scan every 5 minutes
+		scanInterval = 10 * time.Second // Default: scan every 10 seconds
 	}
 
 	return &BranchScanner{
