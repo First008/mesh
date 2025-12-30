@@ -8,24 +8,24 @@ func TestDefaultSearchConfig(t *testing.T) {
 	config := DefaultSearchConfig()
 
 	// Test that defaults are set correctly
-	if config.MaxTokenBudget != 80000 {
-		t.Errorf("Expected MaxTokenBudget=80000, got %d", config.MaxTokenBudget)
+	if config.MaxTokenBudget != 60000 {
+		t.Errorf("Expected MaxTokenBudget=60000, got %d", config.MaxTokenBudget)
 	}
 
-	if config.ReserveTokens != 5000 {
-		t.Errorf("Expected ReserveTokens=5000, got %d", config.ReserveTokens)
+	if config.ReserveTokens != 25000 {
+		t.Errorf("Expected ReserveTokens=25000, got %d", config.ReserveTokens)
 	}
 
 	if config.MinAbsoluteScore != 0.15 {
 		t.Errorf("Expected MinAbsoluteScore=0.15, got %f", config.MinAbsoluteScore)
 	}
 
-	if config.ScoreDistributionPercentile != 0.90 {
-		t.Errorf("Expected ScoreDistributionPercentile=0.90, got %f", config.ScoreDistributionPercentile)
+	if config.ScoreDistributionPercentile != 0.75 {
+		t.Errorf("Expected ScoreDistributionPercentile=0.75, got %f", config.ScoreDistributionPercentile)
 	}
 
-	if config.MinFilesAfterThreshold != 5 {
-		t.Errorf("Expected MinFilesAfterThreshold=5, got %d", config.MinFilesAfterThreshold)
+	if config.MinFilesAfterThreshold != 6 {
+		t.Errorf("Expected MinFilesAfterThreshold=6, got %d", config.MinFilesAfterThreshold)
 	}
 
 	// Test weight sum

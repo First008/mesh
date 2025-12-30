@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -34,17 +35,20 @@ func NewOllamaLLMProvider(baseURL, model string, logger zerolog.Logger) (*Ollama
 	return &OllamaLLMProvider{
 		baseURL: strings.TrimSuffix(baseURL, "/"),
 		model:   model,
-		client:  &http.Client{},
-		logger:  logger,
+		client: &http.Client{
+			Timeout: 120 * time.Second, // 2 minutes for local models
+		},
+		logger: logger,
 	}, nil
 }
 
 // ollamaRequest represents the request body for Ollama API
 type ollamaRequest struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
-	System string `json:"system,omitempty"`
-	Stream bool   `json:"stream"`
+	Model   string                 `json:"model"`
+	Prompt  string                 `json:"prompt"`
+	System  string                 `json:"system,omitempty"`
+	Stream  bool                   `json:"stream"`
+	Options map[string]interface{} `json:"options,omitempty"`
 }
 
 // ollamaResponse represents the response from Ollama API
@@ -67,6 +71,11 @@ func (op *OllamaLLMProvider) Ask(ctx context.Context, systemPrompt, userPrompt s
 		Prompt: userPrompt,
 		System: systemPrompt,
 		Stream: false,
+		Options: map[string]interface{}{
+			"num_predict": 700,  // Limit output tokens (start conservative)
+			"temperature": 0.2,  // Reduce rambling
+			"top_p":       0.9,  // Focus on high-probability tokens
+		},
 	}
 
 	jsonData, err := json.Marshal(reqBody)

@@ -8,6 +8,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	contextbuilder "github.com/First008/mesh/internal/context"
 	"github.com/First008/mesh/internal/factory"
@@ -47,18 +48,53 @@ func New(config *Config, logger zerolog.Logger) (*Agent, error) {
 		return nil, fmt.Errorf("failed to create LLM provider: %w", err)
 	}
 
-	// Create context builder
-	contextBuilder := contextbuilder.NewBuilder(
+	// Pick context limits based on LLM provider
+	var maxRegularChars, maxChunksPerFile, maxChunkChars, maxCacheableLines int
+
+	// Simple string matching on provider/model
+	providerLower := strings.ToLower(config.LLMProvider)
+	modelLower := strings.ToLower(config.LLMModel)
+
+	if providerLower == "ollama" {
+		// Ollama local models: aggressive limits
+		maxRegularChars = 35000
+		maxChunksPerFile = 3
+		maxChunkChars = 1200
+		maxCacheableLines = 100 // Reduced from 200 for faster responses
+	} else if strings.Contains(modelLower, "sonnet") {
+		// Anthropic Sonnet: larger context OK
+		maxRegularChars = 80000
+		maxChunksPerFile = 5
+		maxChunkChars = 2000
+		maxCacheableLines = 500
+	} else if strings.Contains(modelLower, "haiku") {
+		// Anthropic Haiku: moderate
+		maxRegularChars = 50000
+		maxChunksPerFile = 4
+		maxChunkChars = 1500
+		maxCacheableLines = 300
+	} else {
+		// Fallback (OpenAI, unknown)
+		maxRegularChars = 50000
+		maxChunksPerFile = 3
+		maxChunkChars = 1500
+		maxCacheableLines = 300
+	}
+
+	// Create context builder with limits
+	contextBuilder := contextbuilder.NewBuilderWithLimits(
 		config.RepoPath,
 		config.RepoName,
+		"main", // branch - TODO: should come from config
 		config.FocusPaths,
+		config.ExcludePatterns,
+		nil, // vectorStore will be set later if available
+		maxRegularChars,
+		maxChunksPerFile,
+		maxChunkChars,
+		maxCacheableLines,
 		logger,
 	)
-
-	// Set exclude patterns if configured
-	if len(config.ExcludePatterns) > 0 {
-		contextBuilder.SetExcludePatterns(config.ExcludePatterns)
-	}
 
 	// Initialize vector store if configured (Phase 2+)
 	if config.QdrantURL != "" {

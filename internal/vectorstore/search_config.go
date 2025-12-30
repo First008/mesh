@@ -27,24 +27,24 @@ type SearchConfig struct {
 	AggregateWeight float32 // Multi-chunk depth weight (default: 0.10)
 }
 
-// DefaultSearchConfig returns a conservative configuration optimized for recall
-// with safety guards against token overflow and overly strict gating.
+// DefaultSearchConfig returns a balanced configuration optimized for
+// response speed while maintaining search quality.
 func DefaultSearchConfig() *SearchConfig {
 	return &SearchConfig{
-		// Token budget: 80K tokens (~320KB text), leaving 35K for system prompt + cacheable context
-		// Cacheable layer (CLAUDE.md + README + structure) typically uses ~20-30K tokens
-		MaxTokenBudget:     80000,
-		ReserveTokens:      35000, // Increased from 5K to account for cacheable layer overhead
-		OversizeChunkLimit: 5,     // Include top-5 chunks from large files
+		// Token budget: Reduced for faster LLM processing
+		// Target: 25-35K tokens = 60-90 second responses (down from 90-120s)
+		MaxTokenBudget:     60000, // Reduced from 80K
+		ReserveTokens:      25000, // Realistic reserve for system prompts
+		OversizeChunkLimit: 4,     // Top-4 chunks from large files
 
-		// Adaptive scoring: p90-based with 0.15 floor
-		MinAbsoluteScore:            0.15,
-		ScoreDistributionPercentile: 0.70, // p70 instead of p90 - include more files
-		MinFilesAfterThreshold:      8,    // Increase min from 5 to 8 // Ensure at least 5 files survive
+		// Adaptive scoring: Keep proven thresholds
+		MinAbsoluteScore:            0.15, // Proven floor - don't change
+		ScoreDistributionPercentile: 0.75, // p75 for better focus
+		MinFilesAfterThreshold:      6,    // Moderate reduction
 
-		// Search parameters
-		InitialChunkLimit: 50, // 5x multiplier of target files
-		MaxFilesLimit:     15,
+		// Search parameters: Moderate tuning
+		InitialChunkLimit: 50, // Keep at 50 - proven to work
+		MaxFilesLimit:     10, // Down from 15 for faster processing
 
 		// Hybrid weights: semantic-heavy to avoid false keyword boosts
 		SemanticWeight:  0.70, // Primary signal: vector similarity

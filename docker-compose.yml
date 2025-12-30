@@ -4,26 +4,25 @@
 
 name: mesh
 
-# IMPORTANT: Docker Compose automatically loads .env from this directory.
-# Do NOT keep a .env file here - it will override env_file configuration!
-# Keep .env only in project root (../../.env)
+# Docker Compose now in project root alongside .env file
+# This ensures proper .env variable substitution
 
 services:
   # Single gateway managing all repositories
   mesh-gateway:
     build:
-      context: ../..
+      context: .
       dockerfile: deployments/docker/Dockerfile.agent
     container_name: mesh-gateway
     env_file:
-      - ../../.env # Load environment variables from base directory
+      - .env # Load environment variables from same directory
     ports:
       - "9000:9000" # Gateway HTTP API
     volumes:
       # Mount entire platform directory (read-only)
       - ${PLATFORM_DIR:-../../..}:/repos:ro
       # Mount gateway configuration
-      - ../../configs/repos.yaml:/config.yaml:ro
+      - ./configs/repos.yaml:/config.yaml:ro
       # Persistent metadata for branch tracking
       - mesh-metadata:/app/.mesh
     environment:

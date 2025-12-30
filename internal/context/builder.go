@@ -19,14 +19,18 @@ import (
 
 // Builder builds context for LLM queries from repository files
 type Builder struct {
-	repoPath        string
-	repoName        string
-	branch          string
-	focusPaths      []string
-	personality     string
-	excludePatterns []string                // File patterns to exclude from results
-	vectorStore     vectorstore.VectorStore // Optional: for semantic search (Phase 2+)
-	logger          zerolog.Logger
+	repoPath          string
+	repoName          string
+	branch            string
+	focusPaths        []string
+	personality       string
+	excludePatterns   []string                // File patterns to exclude from results
+	vectorStore       vectorstore.VectorStore // Optional: for semantic search (Phase 2+)
+	logger            zerolog.Logger
+	maxRegularChars   int // Max chars for "regular" context layer
+	maxChunksPerFile  int // Max chunks to include per file
+	maxChunkChars     int // Max chars per individual chunk
+	maxCacheableLines int // Limit cacheable content (0 = no limit)
 }
 
 // NewBuilder creates a new context builder (backward compatible)
@@ -41,14 +45,25 @@ func NewBuilderWithBranch(repoPath, repoName, branch string, focusPaths []string
 
 // NewBuilderWithOptions creates a new context builder with all options
 func NewBuilderWithOptions(repoPath, repoName, branch string, focusPaths, excludePatterns []string, vectorStore vectorstore.VectorStore, logger zerolog.Logger) *Builder {
+	// Use default values for chunk limits (will be overridden by agent)
+	return NewBuilderWithLimits(repoPath, repoName, branch, focusPaths, excludePatterns, vectorStore, 50000, 3, 1500, 300, logger)
+}
+
+// NewBuilderWithLimits creates a new context builder with chunk limits
+func NewBuilderWithLimits(repoPath, repoName, branch string, focusPaths, excludePatterns []string, vectorStore vectorstore.VectorStore,
+	maxRegularChars, maxChunksPerFile, maxChunkChars, maxCacheableLines int, logger zerolog.Logger) *Builder {
 	return &Builder{
-		repoPath:        repoPath,
-		repoName:        repoName,
-		branch:          branch,
-		focusPaths:      focusPaths,
-		excludePatterns: excludePatterns,
-		vectorStore:     vectorStore,
-		logger:          logger,
+		repoPath:          repoPath,
+		repoName:          repoName,
+		branch:            branch,
+		focusPaths:        focusPaths,
+		excludePatterns:   excludePatterns,
+		vectorStore:       vectorStore,
+		maxRegularChars:   maxRegularChars,
+		maxChunksPerFile:  maxChunksPerFile,
+		maxChunkChars:     maxChunkChars,
+		maxCacheableLines: maxCacheableLines,
+		logger:            logger,
 	}
 }
 
@@ -85,6 +100,10 @@ func (b *Builder) BuildContextLayers(question string) (*ContextLayers, error) {
 	// Layer 1 (Cacheable): CLAUDE.md - rarely changes
 	claudeMD, err := b.loadClaudeMD()
 	if err == nil && claudeMD != "" {
+		// Truncate for local models if limit is set
+		if b.maxCacheableLines > 0 {
+			claudeMD = truncateToLines(claudeMD, b.maxCacheableLines)
+		}
 		cacheableSB.WriteString("# Project Context (from CLAUDE.md)\n\n")
 		cacheableSB.WriteString(claudeMD)
 		cacheableSB.WriteString("\n\n")
@@ -94,6 +113,10 @@ func (b *Builder) BuildContextLayers(question string) (*ContextLayers, error) {
 	// Layer 1 (Cacheable): README.md - rarely changes
 	readme, err := b.loadReadme()
 	if err == nil && readme != "" {
+		// Truncate for local models if limit is set
+		if b.maxCacheableLines > 0 {
+			readme = truncateToLines(readme, b.maxCacheableLines)
+		}
 		cacheableSB.WriteString("# README\n\n")
 		cacheableSB.WriteString(readme)
 		cacheableSB.WriteString("\n\n")
@@ -303,47 +326,192 @@ func (b *Builder) findRelevantFiles(question string, limit int) ([]FileInfo, err
 }
 
 // vectorSearch uses the vector store for semantic search
-// Uses aggregated search to reconstruct complete files from chunks
+// Returns top chunks only (not full files) for LLM context
 func (b *Builder) vectorSearch(question string, limit int) ([]FileInfo, error) {
-	var results []vectorstore.SearchResult
-	var err error
+	// Use caller's context for proper cancellation/timeout
+	ctx := context.Background() // TODO: Should accept ctx as parameter in future refactor
 
-	// Use aggregated search (reconstructs complete files from chunks)
-	// All VectorStore implementations now support this via the interface
-	results, err = b.vectorStore.SearchWithAggregation(context.Background(), question, limit)
-	if err != nil {
-		b.logger.Warn().Err(err).Msg("Aggregated search failed, falling back to basic search")
-		results, err = b.vectorStore.Search(context.Background(), question, limit)
-	}
-
+	// Get top relevant CHUNKS (not aggregated files)
+	chunks, err := b.vectorStore.Search(ctx, question, limit)
 	if err != nil {
 		b.logger.Warn().Err(err).Msg("Vector search failed, falling back to keyword search")
 		return b.keywordSearch(question, limit)
 	}
 
-	var files []FileInfo
-	for _, result := range results {
-		// Apply exclude patterns
-		if b.shouldExclude(result.FilePath) {
+	if len(chunks) == 0 {
+		b.logger.Debug().Msg("No chunks found, falling back to keyword search")
+		return b.keywordSearch(question, limit)
+	}
+
+	// Group chunks by file
+	fileGroups := groupChunksByFile(chunks)
+
+	// Select top N chunks per file
+	files := b.buildFileInfoFromChunks(fileGroups, b.maxChunksPerFile, b.maxChunkChars)
+
+	// Apply exclude patterns
+	filteredFiles := []FileInfo{}
+	for _, file := range files {
+		if b.shouldExclude(file.RelPath) {
 			b.logger.Debug().
-				Str("file", result.FilePath).
+				Str("file", file.RelPath).
 				Msg("Excluded file based on exclude patterns")
 			continue
 		}
+		filteredFiles = append(filteredFiles, file)
+	}
 
-		files = append(files, FileInfo{
-			RelPath:  result.FilePath,
-			Content:  result.Content,
-			Language: result.Language,
+	// Apply character budget
+	finalFiles := applyCharacterBudget(filteredFiles, b.maxRegularChars)
+
+	b.logger.Debug().
+		Int("chunks", len(chunks)).
+		Int("file_groups", len(fileGroups)).
+		Int("after_budget", len(finalFiles)).
+		Int("total_chars", calculateTotalChars(finalFiles)).
+		Int("budget", b.maxRegularChars).
+		Str("search_method", "chunk_based").
+		Msg("Found relevant files")
+
+	return finalFiles, nil
+}
+
+// calculateTotalChars calculates total characters in file contents
+func calculateTotalChars(files []FileInfo) int {
+	total := 0
+	for _, f := range files {
+		total += len(f.Content)
+	}
+	return total
+}
+
+// fileChunks holds chunks grouped by file with best score for sorting
+type fileChunks struct {
+	basePath  string
+	chunks    []vectorstore.SearchResult
+	bestScore float32
+	language  string
+}
+
+// groupChunksByFile groups search results by base file path
+// Returns a slice (not map) sorted by best chunk score descending
+func groupChunksByFile(chunks []vectorstore.SearchResult) []fileChunks {
+	// Step 1: Group by base path using existing extractBasePath
+	fileMap := make(map[string][]vectorstore.SearchResult)
+	for _, chunk := range chunks {
+		basePath := extractBasePath(chunk.FilePath)
+		fileMap[basePath] = append(fileMap[basePath], chunk)
+	}
+
+	// Step 2: Convert to slice and track best score per file
+	grouped := make([]fileChunks, 0, len(fileMap))
+	for basePath, chunkList := range fileMap {
+		// Find best score (chunks from Search() are already sorted by score desc)
+		bestScore := float32(0.0)
+		language := ""
+		if len(chunkList) > 0 {
+			bestScore = chunkList[0].Score // First chunk has best score
+			language = chunkList[0].Language
+		}
+
+		grouped = append(grouped, fileChunks{
+			basePath:  basePath,
+			chunks:    chunkList,
+			bestScore: bestScore,
+			language:  language,
 		})
 	}
 
-	b.logger.Debug().
-		Int("result_count", len(files)).
-		Str("search_method", "vector_aggregated").
-		Msg("Found relevant files")
+	// Step 3: Sort files by best chunk score (descending)
+	// This ensures most relevant files are included first when applying budget
+	for i := 0; i < len(grouped)-1; i++ {
+		for j := i + 1; j < len(grouped); j++ {
+			if grouped[j].bestScore > grouped[i].bestScore {
+				grouped[i], grouped[j] = grouped[j], grouped[i]
+			}
+		}
+	}
 
-	return files, nil
+	return grouped
+}
+
+// buildFileInfoFromChunks builds FileInfo with only top chunks per file
+// Takes sorted file groups and applies per-file chunk limits
+func (b *Builder) buildFileInfoFromChunks(fileGroups []fileChunks, maxChunksPerFile int, maxChunkChars int) []FileInfo {
+	files := make([]FileInfo, 0, len(fileGroups))
+
+	for _, fg := range fileGroups {
+		// Take top N chunks (already sorted by score from Search())
+		selectedChunks := fg.chunks
+		if len(selectedChunks) > maxChunksPerFile {
+			selectedChunks = selectedChunks[:maxChunksPerFile]
+		}
+
+		// Build content from chunks
+		var content strings.Builder
+		for i, chunk := range selectedChunks {
+			// Truncate chunk if too large
+			chunkContent := chunk.Content
+			if len(chunkContent) > maxChunkChars {
+				chunkContent = chunkContent[:maxChunkChars] + "\n... [truncated]"
+			}
+
+			// Simple header with rank and score (NO fake line numbers)
+			content.WriteString(fmt.Sprintf("# Chunk %d (score: %.3f):\n", i+1, chunk.Score))
+			content.WriteString(chunkContent)
+			content.WriteString("\n\n")
+		}
+
+		files = append(files, FileInfo{
+			RelPath:  fg.basePath,
+			Content:  content.String(),
+			Language: fg.language,
+		})
+	}
+
+	return files
+}
+
+// applyCharacterBudget prevents exceeding LLM limits
+// Skips oversized files and continues (doesn't break on first oversized file)
+func applyCharacterBudget(files []FileInfo, maxChars int) []FileInfo {
+	totalChars := 0
+	result := make([]FileInfo, 0, len(files))
+
+	for _, file := range files {
+		fileChars := len(file.Content)
+
+		// Skip files that would exceed budget, but CONTINUE checking others
+		if totalChars+fileChars > maxChars {
+			continue // Skip this file, try next one
+		}
+
+		result = append(result, file)
+		totalChars += fileChars
+	}
+
+	return result
+}
+
+// truncateToLines truncates content to a maximum number of lines
+func truncateToLines(content string, maxLines int) string {
+	if maxLines <= 0 {
+		return content
+	}
+
+	lines := strings.Split(content, "\n")
+	if len(lines) <= maxLines {
+		return content
+	}
+	return strings.Join(lines[:maxLines], "\n") + "\n\n... [truncated for brevity]"
+}
+
+// extractBasePath removes #chunkN suffix from file paths
+func extractBasePath(filePath string) string {
+	if idx := strings.Index(filePath, "#chunk"); idx > 0 {
+		return filePath[:idx]
+	}
+	return filePath
 }
 
 // shouldExclude checks if a file should be excluded based on exclude patterns

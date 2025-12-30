@@ -85,8 +85,7 @@ Prepare repositories with proper name, path (relative to `/repos` mount), focus 
 ### 3. Start
 
 ```bash
-# Start services
-cd deployments/docker
+# Start services (from project root)
 docker compose up -d
 
 # Watch logs
@@ -196,7 +195,7 @@ repos:
 
 ### Docker Compose
 
-Uses `deployments/docker/docker-compose.yml` for the gateway (single file for multi-repo setup).
+Uses `docker-compose.yml` in the project root for the gateway (single file for multi-repo setup).
 
 **Volume Mount Configuration:**
 The compose file automatically mounts your repositories using `PLATFORM_DIR` from `.env`:
