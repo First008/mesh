@@ -74,9 +74,9 @@ func startGateway(configPath string, logger zerolog.Logger) {
 		Int("repos", len(gw.ListRepos())).
 		Msg("Gateway initialized successfully")
 
-	// Start periodic branch scanner (every 5 minutes)
+	// Start periodic branch scanner (every 10 seconds)
 	ctx := context.Background()
-	gw.StartScanner(ctx, 5*time.Minute)
+	gw.StartScanner(ctx, 10*time.Second)
 
 	// Start HTTP server for gateway
 	srv := server.NewGateway(gw, config.Port, logger)
