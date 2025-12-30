@@ -107,8 +107,8 @@ func TestCountTokens_ValidInput(t *testing.T) {
 			maxCount: 10,
 		},
 		{
-			name:     "medium text",
-			text:     "This is a longer piece of text that should have more tokens. " +
+			name: "medium text",
+			text: "This is a longer piece of text that should have more tokens. " +
 				"We're testing the token counting functionality.",
 			minCount: 10,
 			maxCount: 50,

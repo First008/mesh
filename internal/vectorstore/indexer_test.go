@@ -393,15 +393,15 @@ func TestIndexRepository_MultipleFileTypes(t *testing.T) {
 
 	// Create various file types
 	testFiles := map[string]string{
-		"main.go":       "package main",
-		"utils.ts":      "export function test() {}",
-		"helper.py":     "def helper():\n    pass",
-		"config.yaml":   "key: value",
-		"README.md":     "# README",
-		"data.json":     `{"key": "value"}`,
-		"script.sh":     "#!/bin/bash\necho hello",
-		"ignored.txt":   "should be skipped",
-		"binary.bin":    "binary content",
+		"main.go":     "package main",
+		"utils.ts":    "export function test() {}",
+		"helper.py":   "def helper():\n    pass",
+		"config.yaml": "key: value",
+		"README.md":   "# README",
+		"data.json":   `{"key": "value"}`,
+		"script.sh":   "#!/bin/bash\necho hello",
+		"ignored.txt": "should be skipped",
+		"binary.bin":  "binary content",
 	}
 
 	for filename, content := range testFiles {
@@ -489,4 +489,3 @@ func TestIndexRepository_NestedDirectories(t *testing.T) {
 		}
 	}
 }
-

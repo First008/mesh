@@ -8,9 +8,9 @@ import (
 
 // GitHubPushEvent represents a GitHub push webhook payload (simplified)
 type GitHubPushEvent struct {
-	Ref        string `json:"ref"`        // refs/heads/main
-	Before     string `json:"before"`     // Previous commit SHA
-	After      string `json:"after"`      // New commit SHA
+	Ref        string `json:"ref"`    // refs/heads/main
+	Before     string `json:"before"` // Previous commit SHA
+	After      string `json:"after"`  // New commit SHA
 	Repository struct {
 		Name     string `json:"name"`
 		FullName string `json:"full_name"` // owner/repo

@@ -57,8 +57,8 @@ func TestSearchConfigValidate(t *testing.T) {
 		{
 			name: "invalid: score below 0",
 			config: SearchConfig{
-				MaxTokenBudget:  80000,
-				ReserveTokens:   5000,
+				MaxTokenBudget:   80000,
+				ReserveTokens:    5000,
 				MinAbsoluteScore: -0.1,
 			},
 			wantErr: true,
@@ -66,8 +66,8 @@ func TestSearchConfigValidate(t *testing.T) {
 		{
 			name: "invalid: score above 1",
 			config: SearchConfig{
-				MaxTokenBudget:  80000,
-				ReserveTokens:   5000,
+				MaxTokenBudget:   80000,
+				ReserveTokens:    5000,
 				MinAbsoluteScore: 1.5,
 			},
 			wantErr: true,

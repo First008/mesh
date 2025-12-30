@@ -10,11 +10,11 @@ import (
 // BranchMetadata tracks indexing state per branch
 // This allows incremental re-indexing when commits change
 type BranchMetadata struct {
-	RepoName   string    `json:"repo_name"`
-	Branch     string    `json:"branch"`
-	CommitSHA  string    `json:"commit_sha"`
-	IndexedAt  time.Time `json:"indexed_at"`
-	FileCount  int       `json:"file_count"`
+	RepoName  string    `json:"repo_name"`
+	Branch    string    `json:"branch"`
+	CommitSHA string    `json:"commit_sha"`
+	IndexedAt time.Time `json:"indexed_at"`
+	FileCount int       `json:"file_count"`
 }
 
 // GetMetadataPath returns path to metadata file for repo+branch

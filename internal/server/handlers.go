@@ -13,11 +13,11 @@ type AskRequest struct {
 
 // AskResponse is the response body for the /ask endpoint
 type AskResponse struct {
-	Answer       string `json:"answer"`
-	Model        string `json:"model"`
-	InputTokens  int    `json:"input_tokens"`
-	OutputTokens int    `json:"output_tokens"`
-	CachedTokens int    `json:"cached_tokens"`
+	Answer       string  `json:"answer"`
+	Model        string  `json:"model"`
+	InputTokens  int     `json:"input_tokens"`
+	OutputTokens int     `json:"output_tokens"`
+	CachedTokens int     `json:"cached_tokens"`
 	CostUSD      float64 `json:"cost_usd,omitempty"`
 }
 
@@ -95,13 +95,13 @@ type MetricsResponse struct {
 
 // DailyMetrics holds daily statistics
 type DailyMetrics struct {
-	SpendUSD      float64 `json:"spend_usd"`
-	InputTokens   int64   `json:"input_tokens"`
-	OutputTokens  int64   `json:"output_tokens"`
-	CachedTokens  int64   `json:"cached_tokens"`
-	RequestCount  int     `json:"request_count"`
-	LimitUSD      float64 `json:"limit_usd"`
-	RemainingUSD  float64 `json:"remaining_usd"`
+	SpendUSD     float64 `json:"spend_usd"`
+	InputTokens  int64   `json:"input_tokens"`
+	OutputTokens int64   `json:"output_tokens"`
+	CachedTokens int64   `json:"cached_tokens"`
+	RequestCount int     `json:"request_count"`
+	LimitUSD     float64 `json:"limit_usd"`
+	RemainingUSD float64 `json:"remaining_usd"`
 }
 
 // TotalMetrics holds total statistics
@@ -120,13 +120,13 @@ func (s *Server) handleMetrics(c *gin.Context) {
 
 	c.JSON(http.StatusOK, MetricsResponse{
 		Daily: DailyMetrics{
-			SpendUSD:      dailyStats.SpendUSD,
-			InputTokens:   dailyStats.InputTokens,
-			OutputTokens:  dailyStats.OutputTokens,
-			CachedTokens:  dailyStats.CachedTokens,
-			RequestCount:  dailyStats.RequestCount,
-			LimitUSD:      dailyStats.LimitUSD,
-			RemainingUSD:  dailyStats.RemainingUSD,
+			SpendUSD:     dailyStats.SpendUSD,
+			InputTokens:  dailyStats.InputTokens,
+			OutputTokens: dailyStats.OutputTokens,
+			CachedTokens: dailyStats.CachedTokens,
+			RequestCount: dailyStats.RequestCount,
+			LimitUSD:     dailyStats.LimitUSD,
+			RemainingUSD: dailyStats.RemainingUSD,
 		},
 		Total: TotalMetrics{
 			TotalSpendUSD:     totalStats.TotalSpendUSD,

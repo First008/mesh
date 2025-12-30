@@ -16,12 +16,12 @@ var Extensions = map[string]bool{
 	".go": true,
 
 	// JavaScript/TypeScript
-	".js":   true,
-	".ts":   true,
-	".tsx":  true,
-	".jsx":  true,
-	".mjs":  true,
-	".cjs":  true,
+	".js":  true,
+	".ts":  true,
+	".tsx": true,
+	".jsx": true,
+	".mjs": true,
+	".cjs": true,
 
 	// Python
 	".py": true,
@@ -33,13 +33,13 @@ var Extensions = map[string]bool{
 	".scala": true,
 
 	// C/C++
-	".c":    true,
-	".cpp":  true,
-	".cc":   true,
-	".cxx":  true,
-	".h":    true,
-	".hpp":  true,
-	".hxx":  true,
+	".c":   true,
+	".cpp": true,
+	".cc":  true,
+	".cxx": true,
+	".h":   true,
+	".hpp": true,
+	".hxx": true,
 
 	// C#
 	".cs": true,
@@ -81,12 +81,12 @@ var Languages = map[string]string{
 	".go": "go",
 
 	// JavaScript/TypeScript
-	".js":   "javascript",
-	".mjs":  "javascript",
-	".cjs":  "javascript",
-	".ts":   "typescript",
-	".tsx":  "typescript",
-	".jsx":  "javascript",
+	".js":  "javascript",
+	".mjs": "javascript",
+	".cjs": "javascript",
+	".ts":  "typescript",
+	".tsx": "typescript",
+	".jsx": "javascript",
 
 	// Python
 	".py": "python",
@@ -98,13 +98,13 @@ var Languages = map[string]string{
 	".scala": "scala",
 
 	// C/C++
-	".c":    "c",
-	".cpp":  "cpp",
-	".cc":   "cpp",
-	".cxx":  "cpp",
-	".h":    "c",
-	".hpp":  "cpp",
-	".hxx":  "cpp",
+	".c":   "c",
+	".cpp": "cpp",
+	".cc":  "cpp",
+	".cxx": "cpp",
+	".h":   "c",
+	".hpp": "cpp",
+	".hxx": "cpp",
 
 	// C#
 	".cs": "csharp",
@@ -164,9 +164,9 @@ var SkipDirectories = map[string]bool{
 	".tox":        true,
 
 	// IDE
-	".idea":     true,
-	".vscode":   true,
-	".vs":       true,
+	".idea":   true,
+	".vscode": true,
+	".vs":     true,
 
 	// Other
 	".next":  true,

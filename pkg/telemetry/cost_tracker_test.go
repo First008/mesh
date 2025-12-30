@@ -118,7 +118,7 @@ func TestRecordRequest_CachedTokenDiscount(t *testing.T) {
 		t.Fatalf("RecordRequest failed: %v", err)
 	}
 
-	cachedCost := (100000.0 / 1000000) * 3.00 * 0.1  // 90% discount
+	cachedCost := (100000.0 / 1000000) * 3.00 * 0.1 // 90% discount
 	inputCost := (10000.0 / 1000000) * 3.00
 	outputCost := (5000.0 / 1000000) * 15.00
 	expectedCost := cachedCost + inputCost + outputCost

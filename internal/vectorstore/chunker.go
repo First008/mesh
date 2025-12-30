@@ -9,9 +9,9 @@ import (
 
 // Token budget configuration for bge-m3 model (8192 token context)
 const (
-	MaxTokensPerChunk    = 3500  // Safe chunk size to avoid context limit
-	OverlapTokens        = 250   // Overlap between chunks for context continuity
-	MaxTokensWholeFile   = 3200  // Embed whole file if under this limit
+	MaxTokensPerChunk     = 3500 // Safe chunk size to avoid context limit
+	OverlapTokens         = 250  // Overlap between chunks for context continuity
+	MaxTokensWholeFile    = 3200 // Embed whole file if under this limit
 	CharsPerTokenEstimate = 4.0  // Conservative estimate: 1 token ≈ 4 chars
 )
 

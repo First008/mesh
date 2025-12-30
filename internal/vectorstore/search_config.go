@@ -35,7 +35,7 @@ func DefaultSearchConfig() *SearchConfig {
 		// Cacheable layer (CLAUDE.md + README + structure) typically uses ~20-30K tokens
 		MaxTokenBudget:     80000,
 		ReserveTokens:      35000, // Increased from 5K to account for cacheable layer overhead
-		OversizeChunkLimit: 5, // Include top-5 chunks from large files
+		OversizeChunkLimit: 5,     // Include top-5 chunks from large files
 
 		// Adaptive scoring: p90-based with 0.15 floor
 		MinAbsoluteScore:            0.15,

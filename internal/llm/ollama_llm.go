@@ -49,14 +49,14 @@ type ollamaRequest struct {
 
 // ollamaResponse represents the response from Ollama API
 type ollamaResponse struct {
-	Model     string `json:"model"`
-	Response  string `json:"response"`
-	Done      bool   `json:"done"`
-	Context   []int  `json:"context,omitempty"`
-	TotalDuration int64 `json:"total_duration,omitempty"`
-	LoadDuration  int64 `json:"load_duration,omitempty"`
-	PromptEvalCount int `json:"prompt_eval_count,omitempty"`
-	EvalCount     int `json:"eval_count,omitempty"`
+	Model           string `json:"model"`
+	Response        string `json:"response"`
+	Done            bool   `json:"done"`
+	Context         []int  `json:"context,omitempty"`
+	TotalDuration   int64  `json:"total_duration,omitempty"`
+	LoadDuration    int64  `json:"load_duration,omitempty"`
+	PromptEvalCount int    `json:"prompt_eval_count,omitempty"`
+	EvalCount       int    `json:"eval_count,omitempty"`
 }
 
 // Ask sends a question to Ollama and returns the response

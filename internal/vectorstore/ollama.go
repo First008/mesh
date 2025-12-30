@@ -77,7 +77,7 @@ func (o *OllamaEmbeddingProvider) CreateEmbedding(ctx context.Context, text stri
 	start := time.Now()
 
 	req := &api.EmbedRequest{
-		Model:  o.model,
+		Model: o.model,
 		Input: text,
 	}
 

@@ -171,8 +171,8 @@ func (s *GatewayServer) handleReindexRepo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"repo":   repoName,
+		"status":  "success",
+		"repo":    repoName,
 		"message": "Repository re-indexed successfully",
 	})
 }

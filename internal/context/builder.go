@@ -24,8 +24,8 @@ type Builder struct {
 	branch          string
 	focusPaths      []string
 	personality     string
-	excludePatterns []string                    // File patterns to exclude from results
-	vectorStore     vectorstore.VectorStore     // Optional: for semantic search (Phase 2+)
+	excludePatterns []string                // File patterns to exclude from results
+	vectorStore     vectorstore.VectorStore // Optional: for semantic search (Phase 2+)
 	logger          zerolog.Logger
 }
 

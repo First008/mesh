@@ -15,7 +15,7 @@ type Config struct {
 	EmbeddingModel    string       `yaml:"embedding_model"`
 	OllamaURL         string       `yaml:"ollama_url,omitempty"`
 	OpenAIKey         string       `yaml:"openai_key,omitempty"`
-	LLMProvider       string       `yaml:"llm_provider"`        // "anthropic", "ollama", "openai"
+	LLMProvider       string       `yaml:"llm_provider"` // "anthropic", "ollama", "openai"
 	LLMModel          string       `yaml:"llm_model"`
 	AnthropicKey      string       `yaml:"anthropic_key,omitempty"`
 	Repos             []RepoConfig `yaml:"repos"`
