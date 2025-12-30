@@ -63,7 +63,7 @@ cat > .env << EOF
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 LOG_LEVEL=info
 # Optional: Set if mesh is not in same directory as other repos
-# PLATFORM_DIR=/path/to/parent/directory
+# BASE_DIR=/path/to/parent/directory
 EOF
 ```
 
@@ -76,8 +76,8 @@ EOF
   └── repo3/
 ```
 
-If your repos are siblings to mesh (as above), you don't need `PLATFORM_DIR` - the default works.
-If mesh is elsewhere, set `PLATFORM_DIR=/your/projects` in `.env`.
+If your repos are siblings to mesh (as above), you don't need `BASE_DIR` - the default works.
+If mesh is elsewhere, set `BASE_DIR=/your/projects` in `.env`.
 
 **Create `configs/repos.yaml`:**
 Prepare repositories with proper name, path (relative to `/repos` mount), focus paths, exclude patterns and personality for best results.
@@ -198,11 +198,11 @@ repos:
 Uses `docker-compose.yml` in the project root for the gateway (single file for multi-repo setup).
 
 **Volume Mount Configuration:**
-The compose file automatically mounts your repositories using `PLATFORM_DIR` from `.env`:
+The compose file automatically mounts your repositories using `BASE_DIR` from `.env`:
 
 ```yaml
 volumes:
-  - ${PLATFORM_DIR:-../../..}:/repos:ro  # Auto-discovers sibling repos
+  - ${BASE_DIR:-../../..}:/repos:ro  # Auto-discovers sibling repos
 ```
 
 **No configuration needed** if your directory structure is:
@@ -215,7 +215,7 @@ volumes:
 
 **Custom location?** Set in `.env`:
 ```bash
-PLATFORM_DIR=/path/to/your/projects
+BASE_DIR=/path/to/your/projects
 ```
 
 ### Embedding Models
