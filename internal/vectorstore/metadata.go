@@ -80,9 +80,23 @@ func GetKnownBranches(repoName string) ([]string, error) {
 	var branches []string
 	for _, entry := range entries {
 		if entry.IsDir() {
-			// Directory name is sanitized branch name, we need to keep it as-is
-			// because we use it to check metadata
-			branches = append(branches, entry.Name())
+			// Read metadata file to get the original branch name (with slashes)
+			// Directory names are sanitized, but we need the original name for git commands
+			metaPath := filepath.Join(repoMetaPath, entry.Name(), "metadata.json")
+			data, err := os.ReadFile(metaPath)
+			if err != nil {
+				// Skip if metadata file doesn't exist or can't be read
+				continue
+			}
+
+			var meta BranchMetadata
+			if err := json.Unmarshal(data, &meta); err != nil {
+				// Skip if metadata is corrupted
+				continue
+			}
+
+			// Use the original branch name from metadata
+			branches = append(branches, meta.Branch)
 		}
 	}
 
