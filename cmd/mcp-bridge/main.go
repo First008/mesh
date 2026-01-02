@@ -19,6 +19,7 @@ type HTTPAgent struct {
 	baseURL   string
 	repoName  string
 	isGateway bool
+	repos     []RepoInfo // List of available repos (gateway mode)
 	logger    zerolog.Logger
 }
 
@@ -156,6 +157,24 @@ func (h *HTTPAgent) registerGatewayTools(mcpServer *mcp.Server) error {
 	h.logger.Info().
 		Int("repo_count", reposResp.Count).
 		Msg("Fetched repositories from gateway")
+
+	// Register "ask_all" tool for querying all repositories
+	mcp.AddTool(
+		mcpServer,
+		&mcp.Tool{
+			Name:        "ask_all",
+			Description: "Ask a question across ALL repositories. Queries all repos concurrently and aggregates results. Use this when you're not sure which repo contains the answer or need cross-repo insights.",
+		},
+		h.handleAskAll,
+	)
+
+	h.logger.Info().
+		Str("tool", "ask_all").
+		Int("repos", reposResp.Count).
+		Msg("Registered ask_all tool for cross-repo queries")
+
+	// Store repos for ask_all to use
+	h.repos = reposResp.Repos
 
 	// Register a tool for each repository
 	for _, repo := range reposResp.Repos {
@@ -303,6 +322,124 @@ func (h *HTTPAgent) handleAskRepo(ctx context.Context, request *mcp.CallToolRequ
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			&mcp.TextContent{Text: gatewayResp.Answer},
+		},
+	}, nil, nil
+}
+
+// handleAskAll queries all repositories concurrently and aggregates results
+func (h *HTTPAgent) handleAskAll(ctx context.Context, request *mcp.CallToolRequest, args AskToolArgs) (*mcp.CallToolResult, any, error) {
+	h.logger.Info().
+		Str("question", args.Question).
+		Int("repos", len(h.repos)).
+		Msg("MCP ask_all tool invoked, querying all repositories concurrently")
+
+	type repoResult struct {
+		repo     string
+		answer   string
+		err      error
+		usage    struct{ input, output, cached int }
+		model    string
+	}
+
+	results := make(chan repoResult, len(h.repos))
+
+	// Query all repos concurrently
+	for _, repo := range h.repos {
+		go func(repoName string) {
+			result := repoResult{repo: repoName}
+
+			// Build request
+			reqBody := AskRequest{Question: args.Question}
+			jsonData, err := json.Marshal(reqBody)
+			if err != nil {
+				result.err = fmt.Errorf("marshal error: %w", err)
+				results <- result
+				return
+			}
+
+			// Call gateway for this repo
+			url := fmt.Sprintf("%s/ask/%s", h.baseURL, repoName)
+			resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+			if err != nil {
+				result.err = fmt.Errorf("request error: %w", err)
+				results <- result
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				body, _ := io.ReadAll(resp.Body)
+				result.err = fmt.Errorf("status %d: %s", resp.StatusCode, string(body))
+				results <- result
+				return
+			}
+
+			// Parse response
+			var gatewayResp struct {
+				Answer string `json:"answer"`
+				Usage  struct {
+					InputTokens  int `json:"input_tokens"`
+					OutputTokens int `json:"output_tokens"`
+					CachedTokens int `json:"cached_tokens"`
+				} `json:"usage"`
+				Model string `json:"model"`
+			}
+
+			if err := json.NewDecoder(resp.Body).Decode(&gatewayResp); err != nil {
+				result.err = fmt.Errorf("decode error: %w", err)
+				results <- result
+				return
+			}
+
+			result.answer = gatewayResp.Answer
+			result.usage.input = gatewayResp.Usage.InputTokens
+			result.usage.output = gatewayResp.Usage.OutputTokens
+			result.usage.cached = gatewayResp.Usage.CachedTokens
+			result.model = gatewayResp.Model
+			results <- result
+		}(repo.Name)
+	}
+
+	// Collect results
+	var response string
+	totalInput, totalOutput, totalCached := 0, 0, 0
+	successCount := 0
+
+	for i := 0; i < len(h.repos); i++ {
+		result := <-results
+
+		if result.err != nil {
+			h.logger.Warn().
+				Str("repo", result.repo).
+				Err(result.err).
+				Msg("Failed to query repository")
+			response += fmt.Sprintf("\n## %s\n\n❌ Error: %s\n", result.repo, result.err)
+			continue
+		}
+
+		successCount++
+		totalInput += result.usage.input
+		totalOutput += result.usage.output
+		totalCached += result.usage.cached
+
+		response += fmt.Sprintf("\n## %s\n\n%s\n", result.repo, result.answer)
+	}
+
+	h.logger.Info().
+		Int("success", successCount).
+		Int("failed", len(h.repos)-successCount).
+		Int("total_input", totalInput).
+		Int("total_output", totalOutput).
+		Int("total_cached", totalCached).
+		Msg("ask_all completed")
+
+	// Prepend summary
+	summary := fmt.Sprintf("# Cross-Repository Query Results\n\nQueried %d repositories (%d successful, %d failed)\n\n**Total Usage:** %d input tokens, %d output tokens, %d cached tokens\n",
+		len(h.repos), successCount, len(h.repos)-successCount, totalInput, totalOutput, totalCached)
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: summary + response},
 		},
 	}, nil, nil
 }
